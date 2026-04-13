@@ -35,6 +35,7 @@ body {
   overflow: hidden;
   font-size: 14px;
 }
+/* Override overflow pada layar kecil — ditangani di media query */
 
 /* ============ SCROLLBAR ============ */
 ::-webkit-scrollbar { width: 6px; }
@@ -598,13 +599,183 @@ input[type=range]::-webkit-slider-thumb {
 .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
 .empty-state h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
 .empty-state p { font-size: 14px; }
+
+/* ============ MOBILE SIDEBAR TOGGLE ============ */
+.sidebar-toggle-btn {
+  display: none;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  width: 38px; height: 38px;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.sidebar-toggle-btn:hover { background: rgba(255,255,255,0.15); }
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.sidebar-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ============ TABLET (769px – 1100px) ============ */
+@media (max-width: 1100px) and (min-width: 769px) {
+  .sidebar { width: 240px; min-width: 240px; padding: 1.2rem 1rem; }
+  .main-header { padding: 1.2rem 1.5rem 0; }
+  .tabs { padding: 0 1.5rem; }
+  .tab-content { padding: 1.2rem 1.5rem; }
+  .main-title { font-size: 1.6rem; }
+  .cmp-wrapper { grid-template-columns: repeat(2, 1fr); }
+  .cmp-select-grid { grid-template-columns: repeat(2, 1fr); }
+  .hp-title { font-size: 18px; }
+}
+
+/* ============ MOBILE (≤ 768px) ============ */
+@media (max-width: 768px) {
+
+  /* ── Layout: body jadi scrollable penuh ── */
+  body {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* ── Sidebar: drawer fixed dari kiri ── */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 285px;
+    height: 100%;
+    height: 100dvh; /* dynamic viewport height untuk browser modern */
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+    box-shadow: none;
+    border-right: 1px solid var(--border2);
+    overflow-y: auto;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0,0,0,0.5);
+  }
+  .sidebar-overlay { display: block; }
+  #sidebar-close-btn { display: block !important; }
+
+  /* ── Tombol hamburger ── */
+  .sidebar-toggle-btn { display: flex; }
+
+  /* ── Main content: penuh, bisa scroll ── */
+  .main-content {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+    min-height: 0;
+  }
+
+  /* ── Tab content: tidak fixed height, ikut konten ── */
+  .tab-content {
+    display: none;
+    flex: none;
+    overflow-y: visible;
+    padding: 1rem;
+    height: auto;
+  }
+  .tab-content.active { display: block; }
+
+  /* ── Header ── */
+  .main-header {
+    padding: 0.9rem 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .main-header-text { flex: 1; min-width: 0; }
+  .main-title { font-size: 1.2rem; margin-bottom: 2px; }
+  .main-subtitle { font-size: 0.82rem; margin-bottom: 0.4rem; line-height: 1.4; }
+
+  /* ── Tabs ── */
+  .tabs { padding: 0 1rem; overflow-x: auto; flex-shrink: 0; }
+  .tab-btn { font-size: 13px; padding: 8px 12px; white-space: nowrap; }
+
+  /* ── HP Card ── */
+  .hp-card { padding: 16px 16px 14px; }
+  .hp-title { font-size: 15px; padding-right: 95px; }
+  .hp-price { font-size: 20px; }
+  .match-badge { font-size: 11px; padding: 4px 10px; top: 14px; right: 14px; }
+  .hp-specs { font-size: 13px; line-height: 1.7; }
+
+  /* ── Comparison: 1 kolom ── */
+  .cmp-wrapper, .cmp-wrapper-2 { grid-template-columns: 1fr; }
+
+  /* ── Select HP grid: 1 kolom ── */
+  .cmp-select-grid { grid-template-columns: 1fr; gap: 10px; }
+
+  /* ── Skor kategori: stack ── */
+  .skor-cat-grid { flex-direction: column; gap: 12px; }
+
+  /* ── Tabel detail: scroll horizontal ── */
+  .det-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .det-table { font-size: 12px; min-width: 400px; }
+  .det-table th, .det-table td { padding: 8px 10px; }
+}
+
+/* ============ SMALL MOBILE (≤ 480px) ============ */
+@media (max-width: 480px) {
+  .main-title { font-size: 1.05rem; }
+  .main-subtitle { display: none; } /* sembunyikan subtitle di layar sangat kecil */
+  .tab-btn { font-size: 12px; padding: 7px 9px; }
+  .tab-content { padding: 0.75rem; }
+  .hp-card { padding: 14px; margin-bottom: 16px; }
+  .hp-title { font-size: 14px; padding-right: 85px; }
+  .hp-price { font-size: 18px; }
+  .sel-btn { font-size: 11px; padding: 3px 2px; }
+  .empty-state { padding: 36px 14px; }
+  .empty-state .icon { font-size: 36px; }
+  .empty-state h3 { font-size: 16px; }
+  .match-badge { font-size: 10px; padding: 3px 8px; }
+  .cmp-nama { font-size: 14px; }
+  .chat-input { font-size: 14px; }
+}
+
+/* ============ LARGE SCREEN (≥ 1400px) ============ */
+@media (min-width: 1400px) {
+  .sidebar { width: 320px; min-width: 320px; }
+  .main-title { font-size: 2.2rem; }
+  .tab-content { padding: 1.8rem 3rem; }
+  .main-header { padding: 1.8rem 3rem 0; }
+  .tabs { padding: 0 3rem; }
+}
 </style>
 </head>
 <body>
 
+<!-- Overlay untuk mobile sidebar -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
 <!-- ===================== SIDEBAR ===================== -->
-<div class="sidebar">
-  <div class="sidebar-title">⚙️ Filter Manual</div>
+<div class="sidebar" id="sidebar">
+  <!-- Tombol close di mobile -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <div class="sidebar-title" style="margin-bottom:0;">⚙️ Filter Manual</div>
+    <button onclick="closeSidebar()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:2px 6px;display:none;" id="sidebar-close-btn">✕</button>
+  </div>
   <div class="st-info">
     Slider otomatis menyesuaikan teks yang Anda ketik. Anda juga bisa menggesernya secara manual.
   </div>
@@ -650,10 +821,14 @@ input[type=range]::-webkit-slider-thumb {
 <!-- ===================== MAIN CONTENT ===================== -->
 <div class="main-content">
   <div class="main-header">
-    <h1 class="main-title">🤖 Smartphone AI Advisor</h1>
-    <p class="main-subtitle">
-      Cari <em>smartphone</em> terbaik menggunakan <b>NLP + Cosine Similarity</b>, atau <b>bandingkan</b> spesifikasi secara detail.
-    </p>
+    <!-- Tombol hamburger (hanya muncul di mobile) -->
+    <button class="sidebar-toggle-btn" onclick="openSidebar()" title="Filter">☰</button>
+    <div class="main-header-text">
+      <h1 class="main-title">🤖 Smartphone AI Advisor</h1>
+      <p class="main-subtitle">
+        Cari <em>smartphone</em> terbaik menggunakan <b>NLP + Cosine Similarity</b>, atau <b>bandingkan</b> spesifikasi secara detail.
+      </p>
+    </div>
   </div>
 
   <div class="tabs">
@@ -762,6 +937,20 @@ function selectSlider(type, val) {
   document.querySelectorAll(`#${type}-select .sel-btn`).forEach(btn => {
     btn.classList.toggle('active', parseInt(btn.dataset.val) === val);
   });
+}
+
+// ==========================================
+// MOBILE SIDEBAR
+// ==========================================
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden'; // cegah scroll body saat drawer terbuka
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 // ==========================================
@@ -1147,6 +1336,7 @@ function renderPerbandingan(data) {
 
   // ── 3. TABEL DETAIL SPESIFIKASI ──
   html += '<div class="section-header">DETAIL PERBANDINGAN SPESIFIKASI</div>';
+  html += '<div class="det-table-wrap">';
   const aspek = [
     ['Chipset',          r => r.chipset],
     ['RAM',              r => `${r.ram} GB`],
@@ -1172,7 +1362,7 @@ function renderPerbandingan(data) {
     });
     html += '</tr>';
   });
-  html += '</tbody></table>';
+  html += '</tbody></table></div>';
 
   // ── 4. KESIMPULAN ──
   const k = data.kesimpulan;
