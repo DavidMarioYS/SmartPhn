@@ -5,3 +5,4 @@ scikit-learn==1.5.2
 joblib==1.4.2
 pydantic==2.10.3
 numpy==1.26.4
+mangum==0.17.0
