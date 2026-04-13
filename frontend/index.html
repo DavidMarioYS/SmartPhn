@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smartphone AI Advisor</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+/* ============ RESET & ROOT ============ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:         #0e1117;
+  --sidebar-bg: #161b22;
+  --card-bg:    #1c2333;
+  --card-bg2:   #21262d;
+  --border:     rgba(255,255,255,0.08);
+  --border2:    rgba(255,255,255,0.15);
+  --text:       #e6edf3;
+  --text-muted: #8d99ae;
+  --accent:     #ff4b4b;
+  --blue:       #4361ee;
+  --green:      #00c896;
+  --green-dark: #00a878;
+  --purple:     #7209b7;
+  --pink:       #f72585;
+  --cyan:       #4cc9f0;
+}
+body {
+  font-family: 'Source Sans Pro', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  font-size: 14px;
+}
+
+/* ============ SCROLLBAR ============ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* ============ SIDEBAR ============ */
+.sidebar {
+  width: 300px;
+  min-width: 300px;
+  background: var(--sidebar-bg);
+  padding: 1.5rem 1.2rem;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.sidebar-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.st-info {
+  background: rgba(67,97,238,0.15);
+  border: 1px solid rgba(67,97,238,0.3);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #8ab4f8;
+  margin-bottom: 1.2rem;
+}
+.sidebar-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1rem 0;
+}
+.slider-group { margin-bottom: 1.1rem; }
+.slider-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  display: block;
+}
+.slider-val {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 6px;
+}
+/* Range slider */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.15);
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--sidebar-bg);
+  box-shadow: 0 0 0 2px rgba(255,75,75,0.3);
+}
+/* Discrete select-slider (buttons) */
+.select-slider { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.sel-btn {
+  flex: 1;
+  min-width: 32px;
+  padding: 4px 2px;
+  text-align: center;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.sel-btn.active {
+  background: rgba(255,75,75,0.2);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+.sel-btn:hover:not(.active) { background: rgba(255,255,255,0.1); }
+
+.st-button {
+  width: 100%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+}
+.st-button:hover { background: #ff3333; }
+.st-button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ============ MAIN CONTENT ============ */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.main-header {
+  padding: 1.5rem 2.5rem 0;
+  flex-shrink: 0;
+}
+.main-title { font-size: 2rem; font-weight: 800; margin-bottom: 6px; }
+.main-subtitle { font-size: 1rem; color: var(--text-muted); margin-bottom: 1rem; }
+.main-subtitle em { color: var(--text); font-style: italic; }
+.main-subtitle b { color: var(--text); }
+
+/* ============ TABS ============ */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding: 0 2.5rem;
+  flex-shrink: 0;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 18px;
+  font-size: 15px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  transition: all 0.2s;
+  margin-bottom: -1px;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn:hover:not(.active) { color: var(--text); }
+.tab-content { display: none; flex: 1; overflow-y: auto; padding: 1.5rem 2.5rem; }
+.tab-content.active { display: block; }
+
+/* ============ CHAT INPUT (Rekomendasi Tab) ============ */
+.chat-input-wrap {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 1.2rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  align-items: center;
+}
+.chat-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+}
+.chat-input::placeholder { color: var(--text-muted); }
+.chat-send-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  width: 32px; height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+.chat-send-btn:hover { background: rgba(255,75,75,0.2); color: var(--accent); border-color: var(--accent); }
+
+/* ============ ALERT BOXES ============ */
+.alert-success {
+  background: rgba(0,200,150,0.1);
+  border: 1px solid rgba(0,200,150,0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 1.2rem;
+  font-size: 14px;
+  color: #7dffc8;
+  display: none;
+}
+.alert-error {
+  background: rgba(255,75,75,0.1);
+  border: 1px solid rgba(255,75,75,0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 1.2rem;
+  font-size: 14px;
+  color: #ffaaaa;
+  display: none;
+}
+.alert-warning {
+  background: rgba(255,165,0,0.1);
+  border: 1px solid rgba(255,165,0,0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 1rem;
+  font-size: 14px;
+  color: #ffcc66;
+  display: none;
+}
+
+/* ============ HP CARD (Rekomendasi) ============ */
+.hp-card {
+  background: var(--card-bg);
+  color: var(--text);
+  padding: 22px 24px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  margin-bottom: 22px;
+  border: 1px solid var(--border);
+  border-left: 6px solid var(--blue);
+  position: relative;
+  transition: all 0.3s ease;
+}
+.hp-card:hover { transform: translateY(-4px); box-shadow: 0 14px 32px rgba(67,97,238,0.2); }
+.hp-card.rank-1 { border-left-color: #ffd700; }
+.match-badge {
+  position: absolute;
+  top: 18px; right: 20px;
+  background: linear-gradient(135deg, var(--blue), #3a0ca3);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 4px 10px rgba(67,97,238,0.3);
+}
+.hp-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; padding-right: 140px; }
+.hp-brand { color: var(--text-muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+.hp-price { color: var(--accent); font-size: 24px; font-weight: 900; margin-bottom: 16px; }
+.hp-specs {
+  font-size: 14px;
+  line-height: 1.9;
+  background: rgba(255,255,255,0.04);
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+.hp-progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 12px;
+}
+.hp-progress-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.hp-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  border-radius: 3px;
+  transition: width 0.8s cubic-bezier(.4,0,.2,1);
+}
+.btn-detail {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--blue);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 13px;
+  transition: color 0.2s;
+}
+.btn-detail:hover { color: var(--cyan); }
+
+/* ============ SECTION HEADER ============ */
+.section-header {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--text-muted);
+  margin: 24px 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ============ COMPARISON DROPDOWN AREA ============ */
+.cmp-select-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 1rem;
+}
+.cmp-select-col label {
+  font-size: 13px;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 6px;
+}
+.hp-select {
+  width: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238d99ae' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.hp-select:focus { border-color: var(--blue); }
+.hp-select option { background: #1c2333; }
+
+/* Expander */
+.expander { margin-bottom: 1rem; }
+.expander-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-muted);
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+.expander-toggle:hover { border-color: var(--border2); }
+.expander-arrow { margin-left: auto; transition: transform 0.2s; }
+.expander-body {
+  display: none;
+  background: var(--card-bg2);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 16px;
+}
+.expander-body.open { display: block; }
+
+/* Dual range label */
+.range-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+.range-vals { font-weight: 700; color: var(--accent); }
+
+/* Filter table */
+.filter-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 12px;
+}
+.filter-table th {
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.05);
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.filter-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text);
+}
+.filter-table tr:last-child td { border-bottom: none; }
+.filter-table tr:hover td { background: rgba(255,255,255,0.02); }
+.filter-caption { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+.filter-caption b { color: var(--blue); }
+
+/* Mulai Perbandingan btn */
+.cmp-btn {
+  width: 100%;
+  background: var(--blue);
+  color: white;
+  border: none;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+  margin-top: 0.5rem;
+}
+.cmp-btn:hover { background: #3551d0; }
+.cmp-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ============ COMPARISON RESULT CARDS ============ */
+.cmp-wrapper   { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin-bottom: 24px; }
+.cmp-wrapper-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 18px; margin-bottom: 24px; }
+
+.cmp-card {
+  background: var(--card-bg);
+  border-radius: 18px;
+  padding: 22px 18px;
+  border: 1px solid var(--border);
+  position: relative;
+  transition: box-shadow 0.3s;
+}
+.cmp-card:hover { box-shadow: 0 8px 28px rgba(67,97,238,0.18); }
+.cmp-card.best {
+  border: 2px solid var(--green);
+  box-shadow: 0 6px 24px rgba(0,200,150,0.18);
+}
+.rec-badge {
+  position: absolute;
+  top: -14px; left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--green), var(--green-dark));
+  color: white;
+  font-size: 11px; font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 10px rgba(0,200,150,0.3);
+}
+.cmp-nama { font-size: 16px; font-weight: 800; margin-bottom: 4px; text-align: center; }
+.cmp-harga { color: var(--accent); font-size: 14px; font-weight: 700; text-align: center; margin-bottom: 14px; }
+.cmp-score-wrap { text-align: center; margin: 10px 0 18px; }
+
+/* Score ring */
+.score-ring {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  margin: 6px auto;
+}
+.score-ring.high   { background: conic-gradient(var(--green) var(--pct), rgba(128,128,128,0.15) 0); }
+.score-ring.medium { background: conic-gradient(var(--blue)  var(--pct), rgba(128,128,128,0.15) 0); }
+.score-ring.low    { background: conic-gradient(var(--accent) var(--pct), rgba(128,128,128,0.15) 0); }
+.score-inner {
+  display: flex; align-items: center; justify-content: center;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--card-bg);
+  flex-direction: column;
+}
+.score-num   { font-size: 20px; font-weight: 900; line-height: 1; }
+.score-denom { font-size: 10px; color: var(--text-muted); line-height: 1; }
+
+/* Category bars */
+.cat-label {
+  font-size: 11px; font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px; margin-top: 14px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.bar-label { font-size: 12px; min-width: 75px; color: var(--text); }
+.bar-track { flex: 1; height: 7px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+.bar-fill  { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+.bar-val   { font-size: 11px; font-weight: 700; min-width: 42px; text-align: right; }
+
+/* ============ DETAIL SKOR PER KATEGORI ============ */
+.skor-cat-grid { display: flex; gap: 16px; margin-bottom: 24px; }
+.skor-cat-col  { flex: 1; }
+.skor-cat-name { font-size: 14px; font-weight: 800; margin-bottom: 12px; }
+.skor-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.skor-label { font-size: 12px; min-width: 78px; color: var(--text); }
+.skor-track { flex: 1; height: 9px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; }
+.skor-fill  { height: 100%; border-radius: 5px; }
+.skor-num   { font-size: 12px; font-weight: 700; min-width: 48px; text-align: right; }
+
+/* ============ DETAIL TABLE ============ */
+.det-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px; }
+.det-table th {
+  font-size: 11px; font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--border);
+}
+.det-table td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.det-table td.aspek { color: var(--text-muted); font-weight: 600; font-size: 12px; }
+.det-table td.best-col { color: var(--green); font-weight: 700; }
+.det-table tr:last-child td { border-bottom: none; }
+.det-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* ============ CONCLUSION BOX ============ */
+.conclusion-box {
+  background: linear-gradient(135deg, rgba(0,200,150,0.1), rgba(67,97,238,0.07));
+  border: 1px solid rgba(0,200,150,0.3);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+.conclusion-title { font-size: 15px; font-weight: 800; color: var(--green); margin-bottom: 8px; }
+.conclusion-text  { font-size: 14px; line-height: 1.7; }
+
+/* ============ RADAR CHART ============ */
+.radar-wrap {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+.radar-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+
+/* ============ SPINNER ============ */
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============ EMPTY STATE ============ */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+.empty-state p { font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- ===================== SIDEBAR ===================== -->
+<div class="sidebar">
+  <div class="sidebar-title">⚙️ Filter Manual</div>
+  <div class="st-info">
+    Slider otomatis menyesuaikan teks yang Anda ketik. Anda juga bisa menggesernya secara manual.
+  </div>
+
+  <div class="slider-group">
+    <span class="slider-label">Budget Maksimal</span>
+    <span class="slider-val" id="budget-display">Rp 5.000.000</span>
+    <input type="range" id="budget-slider" min="1000000" max="25000000" step="500000" value="5000000"
+           oninput="updateBudget(this.value)">
+  </div>
+
+  <div class="slider-group">
+    <span class="slider-label">Minimal RAM (GB)</span>
+    <span class="slider-val" id="ram-display">8</span>
+    <div class="select-slider" id="ram-select">
+      <button class="sel-btn" data-val="4"  onclick="selectSlider('ram',4)">4</button>
+      <button class="sel-btn" data-val="6"  onclick="selectSlider('ram',6)">6</button>
+      <button class="sel-btn active" data-val="8"  onclick="selectSlider('ram',8)">8</button>
+      <button class="sel-btn" data-val="12" onclick="selectSlider('ram',12)">12</button>
+      <button class="sel-btn" data-val="16" onclick="selectSlider('ram',16)">16</button>
+      <button class="sel-btn" data-val="24" onclick="selectSlider('ram',24)">24</button>
+    </div>
+  </div>
+
+  <div class="slider-group">
+    <span class="slider-label">Minimal ROM (GB)</span>
+    <span class="slider-val" id="rom-display">128</span>
+    <div class="select-slider" id="rom-select">
+      <button class="sel-btn" data-val="64"   onclick="selectSlider('rom',64)">64</button>
+      <button class="sel-btn active" data-val="128"  onclick="selectSlider('rom',128)">128</button>
+      <button class="sel-btn" data-val="256"  onclick="selectSlider('rom',256)">256</button>
+      <button class="sel-btn" data-val="512"  onclick="selectSlider('rom',512)">512</button>
+      <button class="sel-btn" data-val="1024" onclick="selectSlider('rom',1024)">1TB</button>
+    </div>
+  </div>
+
+  <hr class="sidebar-divider">
+  <button class="st-button" id="btn-cari" onclick="cariRekomendasi()">
+    🚀 Eksekusi Pencarian
+  </button>
+</div>
+
+<!-- ===================== MAIN CONTENT ===================== -->
+<div class="main-content">
+  <div class="main-header">
+    <h1 class="main-title">🤖 Smartphone AI Advisor</h1>
+    <p class="main-subtitle">
+      Cari <em>smartphone</em> terbaik menggunakan <b>NLP + Cosine Similarity</b>, atau <b>bandingkan</b> spesifikasi secara detail.
+    </p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-btn-rekomen" onclick="switchTab('rekomen')">🔍 Rekomendasi AI</button>
+    <button class="tab-btn" id="tab-btn-compare" onclick="switchTab('compare')">⚖️ Perbandingan HP</button>
+  </div>
+
+  <!-- ===== TAB 1: REKOMENDASI AI ===== -->
+  <div id="tab-rekomen" class="tab-content active">
+    <!-- Chat Input -->
+    <div class="chat-input-wrap">
+      <input class="chat-input" id="chat-input" type="text"
+             placeholder="Contoh: Cariin HP gaming Samsung 4 jutaan RAM 8GB"
+             onkeydown="if(event.key==='Enter') kirimChat()">
+      <button class="chat-send-btn" onclick="kirimChat()" title="Kirim">↑</button>
+    </div>
+
+    <div class="alert-success" id="alert-success"></div>
+    <div class="alert-error"   id="alert-error"></div>
+
+    <div id="hasil-rekomen">
+      <div class="empty-state">
+        <div class="icon">📱</div>
+        <h3>Hasil Analisis AI</h3>
+        <p>Masukkan query teks di atas atau atur slider lalu tekan "Eksekusi Pencarian"</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 2: PERBANDINGAN HP ===== -->
+  <div id="tab-compare" class="tab-content">
+    <h3 style="margin-bottom:8px;">⚖️ Bandingkan Spesifikasi HP secara Detail</h3>
+    <p style="color:var(--text-muted);font-size:14px;margin-bottom:18px;">Pilih <b>2 atau 3 HP</b> dari katalog untuk dibandingkan secara menyeluruh.</p>
+
+    <!-- Dropdown 3 HP -->
+    <div class="cmp-select-grid">
+      <div class="cmp-select-col">
+        <label>📱 HP Pertama</label>
+        <select class="hp-select" id="hp1">
+          <option value="">— Pilih HP —</option>
+        </select>
+      </div>
+      <div class="cmp-select-col">
+        <label>📱 HP Kedua</label>
+        <select class="hp-select" id="hp2">
+          <option value="">— Pilih HP —</option>
+        </select>
+      </div>
+      <div class="cmp-select-col">
+        <label>📱 HP Ketiga (Opsional)</label>
+        <select class="hp-select" id="hp3">
+          <option value="">— Pilih HP —</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Expander filter harga -->
+    <div class="expander">
+      <button class="expander-toggle" onclick="toggleExpander(this)">
+        🔎 Atau temukan HP dari rentang harga tertentu
+        <span class="expander-arrow">▼</span>
+      </button>
+      <div class="expander-body" id="expander-body">
+        <div class="range-label">
+          Rentang harga: <span class="range-vals" id="range-display">Rp 2.000.000 – Rp 6.000.000</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;">
+          <span style="font-size:12px;color:var(--text-muted)">Min</span>
+          <input type="range" id="filter-min" min="500000" max="25000000" step="250000" value="2000000"
+                 oninput="updateFilterRange()" style="flex:1">
+          <input type="range" id="filter-max" min="500000" max="25000000" step="250000" value="6000000"
+                 oninput="updateFilterRange()" style="flex:1">
+          <span style="font-size:12px;color:var(--text-muted)">Max</span>
+        </div>
+        <p class="filter-caption" id="filter-caption">Memuat data...</p>
+        <div id="filter-table-wrap" style="max-height:220px;overflow-y:auto;margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <div class="alert-warning" id="cmp-warning"></div>
+
+    <button class="cmp-btn" id="btn-compare" onclick="mulaiPerbandingan()">⚖️ Mulai Perbandingan</button>
+
+    <div id="hasil-compare"></div>
+  </div>
+</div>
+
+<!-- ===================== JAVASCRIPT ===================== -->
+<script>
+const API = window.BACKEND_URL || 'http://127.0.0.1:8000';
+
+// ---- State ----
+let state = { budget: 5000000, ram: 8, rom: 128 };
+let katalogData = { nama_list: [], detail: {} };
+
+// ==========================================
+// SIDEBAR CONTROLS
+// ==========================================
+function updateBudget(val) {
+  state.budget = parseInt(val);
+  document.getElementById('budget-display').textContent = 'Rp ' + parseInt(val).toLocaleString('id-ID');
+}
+function selectSlider(type, val) {
+  state[type] = val;
+  document.getElementById(type + '-display').textContent = val;
+  document.querySelectorAll(`#${type}-select .sel-btn`).forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.val) === val);
+  });
+}
+
+// ==========================================
+// TAB SWITCHING
+// ==========================================
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-btn-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'compare') updateFilterRange();
+}
+
+// ==========================================
+// NLP PARSER (regex-based)
+// ==========================================
+function parseQuery(text) {
+  const t = text.toLowerCase();
+  let budget = 0, ram = 0, rom = 0, brand = '';
+
+  // Budget: "4 juta", "4jt", "4.5 jutaan", "Rp 4000000"
+  let m = t.match(/(\d+(?:[.,]\d+)?)\s*jut(?:a(?:an)?)?/);
+  if (m) budget = Math.round(parseFloat(m[1].replace(',', '.')) * 1_000_000);
+  if (!budget) { m = t.match(/rp\.?\s*([\d.]+)/); if (m) budget = parseInt(m[1].replace(/\./g, '')); }
+
+  // RAM: "ram 8gb", "8gb ram", "8 gb ram"
+  m = t.match(/ram\s*(\d+)\s*gb/i) || t.match(/(\d+)\s*gb\s*ram/i);
+  if (m) ram = parseInt(m[1]);
+
+  // ROM: "rom 256gb", "256gb rom", "256gb internal/storage"
+  m = t.match(/(?:rom|internal|storage|memori)\s*(\d+)\s*gb/i) || t.match(/(\d+)\s*gb\s*(?:rom|internal|storage)/i);
+  if (m) rom = parseInt(m[1]);
+
+  // Brand
+  const brands = ['samsung','xiaomi','oppo','vivo','realme','apple','iphone','asus','infinix','tecno','motorola','honor','huawei','advan','zte'];
+  for (const b of brands) { if (t.includes(b)) { brand = b === 'iphone' ? 'apple' : b; break; } }
+
+  return { budget, ram, rom, brand };
+}
+
+function kirimChat() {
+  const txt = document.getElementById('chat-input').value.trim();
+  if (!txt) return;
+  const { budget, ram, rom, brand } = parseQuery(txt);
+
+  if (budget > 0) {
+    const clamped = Math.min(25000000, Math.max(1000000, budget));
+    state.budget = clamped;
+    document.getElementById('budget-slider').value = clamped;
+    updateBudget(clamped);
+  }
+  // RAM snap to nearest option
+  if (ram > 0) {
+    const ramOpts = [4,6,8,12,16,24];
+    const nearest = ramOpts.reduce((a,b) => Math.abs(b-ram)<Math.abs(a-ram)?b:a);
+    selectSlider('ram', nearest);
+  }
+  // ROM snap to nearest option
+  if (rom > 0) {
+    const romOpts = [64,128,256,512,1024];
+    const nearest = romOpts.reduce((a,b) => Math.abs(b-rom)<Math.abs(a-rom)?b:a);
+    selectSlider('rom', nearest);
+  }
+  // Trigger search
+  cariRekomendasi(brand);
+}
+
+// ==========================================
+// REKOMENDASI AI
+// ==========================================
+async function cariRekomendasi(brand = '') {
+  const btn = document.getElementById('btn-cari');
+  const alertOk  = document.getElementById('alert-success');
+  const alertErr = document.getElementById('alert-error');
+  alertOk.style.display = 'none';
+  alertErr.style.display = 'none';
+
+  btn.innerHTML = '<span class="spinner"></span> Memproses...';
+  btn.disabled = true;
+  document.getElementById('hasil-rekomen').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">✨ Membidik rekomendasi terbaik...</div>';
+
+  // Brand detection from chat if not passed
+  let brandArg = brand;
+  if (!brandArg) {
+    const chatVal = document.getElementById('chat-input').value;
+    brandArg = chatVal ? parseQuery(chatVal).brand : '';
+  }
+
+  const payload = {
+    budget:       state.budget,
+    ram:          state.ram,
+    memori:       state.rom,
+    baterai:      5000,        // default baterai
+    brand:        brandArg.toUpperCase(),
+    chipset_skor: 2,
+    umur_hp:      0,
+  };
+
+  try {
+    const res  = await fetch(API + '/api/rekomendasi', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (data.status === 'sukses') {
+      alertOk.innerHTML = `🎯 Membidik: <b>Rp ${state.budget.toLocaleString('id-ID')} | RAM ${state.ram}GB | ROM ${state.rom}GB</b> &nbsp;|&nbsp; Ditemukan <b>${data.total}</b> HP di bawah budget. Menampilkan 3 terbaik.`;
+      alertOk.style.display = 'block';
+      renderRekomendasi(data);
+    } else {
+      alertErr.innerHTML = '😢 ' + data.pesan;
+      alertErr.style.display = 'block';
+      document.getElementById('hasil-rekomen').innerHTML = '';
+    }
+  } catch(e) {
+    alertErr.innerHTML = '⚠️ Gagal terhubung ke Backend AI. Pastikan <code>uvicorn main:app</code> berjalan di port 8000.';
+    alertErr.style.display = 'block';
+    document.getElementById('hasil-rekomen').innerHTML = '';
+  }
+  btn.innerHTML = '🚀 Eksekusi Pencarian';
+  btn.disabled = false;
+}
+
+function renderRekomendasi(data) {
+  let html = '';
+  data.data.forEach(hp => {
+    const c = hp.raw, s = hp.skor_detail;
+    const rankEmoji = hp.rank === 1 ? '🏆' : hp.rank === 2 ? '🥈' : '🥉';
+    const cardBorder = hp.rank === 1 ? 'border-left-color:#ffd700;' : '';
+    const badgeStyle = hp.rank === 1 ? 'background:linear-gradient(135deg,#ffd700,#ff9900);' : '';
+    html += `
+    <div class="hp-card" style="${cardBorder}">
+      <div class="match-badge" style="${badgeStyle}">⭐ Cocok ${c.persentase}%</div>
+      <div class="hp-title">${c.nama}</div>
+      <div class="hp-brand">${c.brand} | Rilis ${c.rilis}</div>
+      <div class="hp-price">${c.harga_str}</div>
+      <div class="hp-specs">
+        🚀 <b>Performa:</b> ${c.chipset}<br>
+        💾 <b>Penyimpanan:</b> RAM ${c.ram}GB / ROM ${c.memori}GB<br>
+        📸 <b>Kamera:</b> ${c.kamera}<br>
+        🔋 <b>Baterai:</b> ${c.baterai} mAh (Charger ${c.charger}W)
+      </div>
+
+      <div style="margin-top:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">📊 Nilai Kecocokan (AI Score)</div>
+        ${progressBar('Kecocokan Harga', s.harga, '#4cc9f0')}
+        ${progressBar('Kapasitas RAM',   s.ram,    '#4361ee')}
+        ${progressBar('Memori Internal', s.memori, '#7209b7')}
+        ${progressBar('Kap. Baterai',   s.baterai, '#f72585')}
+        <div style="border-top:1px dashed rgba(255,255,255,0.1);margin:10px 0;"></div>
+        ${progressBar('TOTAL SKOR AI', c.persentase, '#ff4b4b', true)}
+      </div>
+
+      <a href="${c.url}" target="_blank" class="btn-detail">🔗 Lihat Detail Spesifikasi di Carisinyal →</a>
+    </div>`;
+  });
+
+  // Radar chart section
+  html += `
+  <div class="section-header">📡 Radar Perbandingan</div>
+  <div class="radar-wrap">
+    <div id="radarChart" style="width:100%;height:400px;"></div>
+  </div>`;
+
+  // Kesimpulan
+  const k = data.kesimpulan;
+  html += `
+  <div class="section-header">💡 Kesimpulan</div>
+  <div class="conclusion-box">
+    <div class="conclusion-title">✅ Rekomendasi: ${k.nama} (${k.harga})</div>
+    <div class="conclusion-text">${k.teks.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}</div>
+  </div>`;
+
+  document.getElementById('hasil-rekomen').innerHTML = html;
+
+  // Render radar
+  const radarTraces = data.radar.map(s => ({
+    type: 'scatterpolar', r: s.r, theta: s.theta, fill: 'toself', name: s.name,
+    line: { width: 2 }, opacity: 0.8
+  }));
+  Plotly.newPlot('radarChart', radarTraces, {
+    paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+    polar: {
+      bgcolor: 'transparent',
+      radialaxis: { visible: true, range: [0,1], color: '#8d99ae', gridcolor: 'rgba(255,255,255,0.1)' },
+      angularaxis: { color: '#8d99ae', gridcolor: 'rgba(255,255,255,0.08)' }
+    },
+    showlegend: true,
+    legend: { font: { color: '#e6edf3', size: 12 } },
+    margin: { t:30, b:30, l:60, r:60 },
+    font: { color: '#e6edf3' }
+  }, { responsive: true });
+}
+
+function progressBar(label, val, color, bold=false) {
+  const w = Math.min(100, Math.max(0, val));
+  return `<div class="skor-row">
+    <span class="skor-label" style="${bold?'font-weight:800;':''}color:${bold?color:'var(--text)'};">${label}</span>
+    <div class="skor-track"><div class="skor-fill" style="width:${w}%;background:${color};"></div></div>
+    <span class="skor-num" style="color:${color};">${Math.round(val)}/100</span>
+  </div>`;
+}
+
+// ==========================================
+// LOAD KATALOG
+// ==========================================
+async function loadKatalog() {
+  try {
+    const res  = await fetch(API + '/api/katalog');
+    const data = await res.json();
+    katalogData = data;
+    const selects = ['hp1','hp2','hp3'];
+    selects.forEach((id, i) => {
+      const sel = document.getElementById(id);
+      sel.innerHTML = `<option value="">— Pilih HP —${i===2?' (Opsional)':''}</option>`;
+      data.nama_list.forEach(nama => {
+        const opt = document.createElement('option');
+        opt.value = nama; opt.textContent = nama;
+        sel.appendChild(opt);
+      });
+    });
+    updateFilterRange();
+  } catch(e) {
+    console.warn('Katalog gagal dimuat:', e);
+  }
+}
+
+// ==========================================
+// EXPANDER
+// ==========================================
+function toggleExpander(btn) {
+  const body = btn.nextElementSibling;
+  const arrow = btn.querySelector('.expander-arrow');
+  const open = body.classList.toggle('open');
+  arrow.textContent = open ? '▲' : '▼';
+  if (open) updateFilterRange();
+}
+
+function updateFilterRange() {
+  const minEl = document.getElementById('filter-min');
+  const maxEl = document.getElementById('filter-max');
+  let minVal = parseInt(minEl.value), maxVal = parseInt(maxEl.value);
+  if (minVal > maxVal) { minEl.value = maxVal; minVal = maxVal; }
+  document.getElementById('range-display').textContent =
+    `Rp ${minVal.toLocaleString('id-ID')} – Rp ${maxVal.toLocaleString('id-ID')}`;
+
+  if (!katalogData.nama_list.length) return;
+  const filtered = katalogData.nama_list.filter(n => {
+    const d = katalogData.detail[n];
+    return d && d.harga >= minVal && d.harga <= maxVal;
+  });
+  document.getElementById('filter-caption').innerHTML =
+    `Ditemukan <b>${filtered.length}</b> HP di rentang Rp ${minVal.toLocaleString('id-ID')} – Rp ${maxVal.toLocaleString('id-ID')}`;
+
+  if (filtered.length === 0) {
+    document.getElementById('filter-table-wrap').innerHTML = '<p style="color:var(--text-muted);font-size:13px;margin-top:8px;">Tidak ada HP di rentang ini.</p>';
+    return;
+  }
+  let rows = filtered.slice(0, 30).map(n => {
+    const d = katalogData.detail[n];
+    return `<tr>
+      <td>${n}</td>
+      <td>${d.brand}</td>
+      <td>Rp ${d.harga.toLocaleString('id-ID')}</td>
+      <td>${d.ram} GB</td>
+      <td>${d.memori} GB</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('filter-table-wrap').innerHTML = `
+    <table class="filter-table">
+      <thead><tr><th>Nama</th><th>Brand</th><th>Harga</th><th>RAM</th><th>ROM</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${filtered.length > 30 ? `<p style="color:var(--text-muted);font-size:12px;margin-top:6px;">...dan ${filtered.length-30} HP lainnya.</p>` : ''}`;
+}
+
+// ==========================================
+// PERBANDINGAN HP
+// ==========================================
+async function mulaiPerbandingan() {
+  const btn      = document.getElementById('btn-compare');
+  const warnEl   = document.getElementById('cmp-warning');
+  warnEl.style.display = 'none';
+
+  const pilihan = ['hp1','hp2','hp3'].map(id => document.getElementById(id).value).filter(v => v);
+
+  if (pilihan.length < 2) {
+    warnEl.innerHTML = '⚠️ Pilih minimal <b>2 HP</b> untuk membandingkan.';
+    warnEl.style.display = 'block';
+    return;
+  }
+  const unique = [...new Set(pilihan)];
+  if (unique.length < pilihan.length) {
+    warnEl.innerHTML = '⚠️ Pilih HP yang <b>berbeda-beda</b>.';
+    warnEl.style.display = 'block';
+    return;
+  }
+
+  btn.innerHTML = '<span class="spinner"></span> Menganalisis...';
+  btn.disabled = true;
+  document.getElementById('hasil-compare').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">⚖️ Menghitung skor...</div>';
+
+  try {
+    const res  = await fetch(API + '/api/bandingkan', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ nama_list: pilihan })
+    });
+    const data = await res.json();
+
+    if (data.status === 'sukses') {
+      renderPerbandingan(data);
+    } else {
+      document.getElementById('hasil-compare').innerHTML = `<div class="alert-error" style="display:block;">${data.pesan}</div>`;
+    }
+  } catch(e) {
+    document.getElementById('hasil-compare').innerHTML =
+      `<div class="alert-error" style="display:block;">⚠️ Gagal terhubung ke Backend AI.</div>`;
+  }
+  btn.innerHTML = '⚖️ Mulai Perbandingan';
+  btn.disabled = false;
+}
+
+function renderPerbandingan(data) {
+  const rows = data.data;
+  const bestIdx = data.best_idx;
+  let html = '';
+
+  // ── 1. SKOR KESELURUHAN ──
+  html += '<div class="section-header">SKOR KESELURUHAN</div>';
+  const wrapClass = rows.length === 2 ? 'cmp-wrapper-2' : 'cmp-wrapper';
+  html += `<div class="${wrapClass}">`;
+  rows.forEach((r, i) => {
+    const isBest  = i === bestIdx;
+    const total   = r.skor_total;
+    const ring    = total >= 80 ? 'high' : total >= 65 ? 'medium' : 'low';
+    const pct     = (total * 3.6).toFixed(0) + 'deg';
+    const badge   = isBest ? '<div class="rec-badge">⭐ Rekomendasi Terbaik</div>' : '';
+    const cls     = isBest ? 'cmp-card best' : 'cmp-card';
+    html += `<div class="${cls}">
+      ${badge}
+      <div class="cmp-nama">${r.nama}</div>
+      <div class="cmp-harga">${r.harga_str}</div>
+      <div class="cmp-score-wrap">
+        <div class="score-ring ${ring}" style="--pct:${pct};">
+          <div class="score-inner">
+            <span class="score-num">${total}</span>
+            <span class="score-denom">/100</span>
+          </div>
+        </div>
+      </div>
+      <div class="cat-label">📊 Skor Per Kategori</div>
+      ${barRow('Performa', r.skor_performa, '#4361ee')}
+      ${barRow('Layar',    r.skor_layar,    '#7209b7')}
+      ${barRow('Baterai',  r.skor_baterai,  '#f72585')}
+      ${barRow('Kamera',   r.skor_kamera,   '#4cc9f0')}
+    </div>`;
+  });
+  html += '</div>';
+
+  // ── 2. DETAIL SKOR PER KATEGORI ──
+  html += '<div class="section-header">DETAIL SKOR PER KATEGORI</div>';
+  const catNames   = ['Performa','Layar','Baterai','Kamera','Total'];
+  const catColors  = ['#4361ee','#7209b7','#f72585','#4cc9f0','#00c896'];
+  const catGetters = [r=>r.skor_performa, r=>r.skor_layar, r=>r.skor_baterai, r=>r.skor_kamera, r=>r.skor_total];
+
+  html += '<div class="skor-cat-grid">';
+  rows.forEach((r, i) => {
+    const label = r.nama.split('(')[0].trim().substring(0,22);
+    html += `<div class="skor-cat-col"><div class="skor-cat-name">${label}</div>`;
+    catNames.forEach((cat, ci) => {
+      const val    = catGetters[ci](r);
+      const maxVal = Math.max(...rows.map(catGetters[ci]));
+      const isBest = val === maxVal;
+      const color  = isBest ? '#00c896' : catColors[ci];
+      html += `<div class="skor-row">
+        <span class="skor-label">${cat}</span>
+        <div class="skor-track"><div class="skor-fill" style="width:${val}%;background:${color};"></div></div>
+        <span class="skor-num" style="color:${color};">${val}/100</span>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // ── 3. TABEL DETAIL SPESIFIKASI ──
+  html += '<div class="section-header">DETAIL PERBANDINGAN SPESIFIKASI</div>';
+  const aspek = [
+    ['Chipset',          r => r.chipset],
+    ['RAM',              r => `${r.ram} GB`],
+    ['Memori Internal',  r => `${r.memori} GB`],
+    ['Panel Layar',      r => r.layar_jenis],
+    ['Refresh Rate',     r => `${r.refresh} Hz`],
+    ['Baterai',          r => `${r.baterai} mAh`],
+    ['Pengisian Daya',   r => `${Math.round(r.charger)} W`],
+    ['Kamera Utama',     r => r.kamera],
+    ['Rilis',            r => r.rilis],
+    ['OS',               r => String(r.os).substring(0,32)],
+  ];
+  html += '<table class="det-table"><thead><tr><th>Aspek</th>';
+  rows.forEach((r, i) => {
+    const nameShort = r.nama.split('(')[0].trim();
+    html += `<th style="color:${i===bestIdx?'var(--green)':'inherit'}">${nameShort}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+  aspek.forEach(([label, fn]) => {
+    html += `<tr><td class="aspek">${label}</td>`;
+    rows.forEach((r, i) => {
+      html += `<td class="${i===bestIdx?'best-col':''}">${fn(r)}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+
+  // ── 4. KESIMPULAN ──
+  const k = data.kesimpulan;
+  html += `
+  <div class="section-header">KESIMPULAN</div>
+  <div class="conclusion-box">
+    <div class="conclusion-title">✅ Rekomendasi: ${k.nama} (${k.harga})</div>
+    <div class="conclusion-text">${k.teks}</div>
+  </div>`;
+
+  document.getElementById('hasil-compare').innerHTML = html;
+}
+
+function barRow(label, val, color) {
+  return `<div class="bar-row">
+    <span class="bar-label">${label}</span>
+    <div class="bar-track"><div class="bar-fill" style="width:${val}%;background:${color};"></div></div>
+    <span class="bar-val" style="color:${color};">${val}/100</span>
+  </div>`;
+}
+
+// ==========================================
+// INIT
+// ==========================================
+window.addEventListener('load', () => {
+  updateBudget(5000000);
+  loadKatalog();
+});
+</script>
+</body>
+</html>
