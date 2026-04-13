@@ -1,7 +1,11 @@
-
 # 📱 Smartphone AI Advisor
 
+[![Live Demo](https://img.shields.io/badge/%F0%9F%9A%80_Live_Demo-smart--phn--syqd.vercel.app-4361ee?style=for-the-badge)](https://smart-phn-syqd.vercel.app/)
+[![Backend API](https://img.shields.io/badge/%E2%9A%99%EF%B8%8F_Backend_API-smart--phn.vercel.app-00c896?style=for-the-badge)](https://smart-phn.vercel.app/api/ping)
+
 Aplikasi rekomendasi dan perbandingan smartphone berbasis **FastAPI** (backend) + **HTML static** (frontend), di-deploy terpisah di Vercel.
+
+> 🌐 **Demo langsung:** [https://smart-phn-syqd.vercel.app](https://smart-phn-syqd.vercel.app/)
 
 ---
 
@@ -10,10 +14,12 @@ Aplikasi rekomendasi dan perbandingan smartphone berbasis **FastAPI** (backend) 
 ```
 App_Smartphone/
 ├── backend/
+│   ├── api/
+│   │   └── index.py           ← Entry point Vercel (Mangum adapter)
 │   ├── main.py                ← FastAPI app (API engine)
 │   ├── requirements.txt       ← Library Python
-│   ├── vercel.json            ← Konfigurasi Vercel untuk Python
-│   ├── dataset_katalog.csv    ← Data HP
+│   ├── vercel.json            ← Konfigurasi routing Vercel
+│   ├── dataset_katalog.csv    ← Data HP (395 item)
 │   ├── dataset_vektor.csv     ← Data fitur ML
 │   └── scaler_knn.pkl         ← Model scaler (MinMaxScaler)
 └── frontend/
@@ -60,6 +66,16 @@ Waktu Pengujian        : 0.58 detik
 
 ---
 
+## URL Deployment (Live)
+
+| Service          | URL                                   |
+| ---------------- | ------------------------------------- |
+| 🌐 Frontend      | https://smart-phn-syqd.vercel.app     |
+| ⚙️ Backend API | https://smart-phn.vercel.app          |
+| 🔍 Health Check  | https://smart-phn.vercel.app/api/ping |
+
+---
+
 ## Deploy ke Vercel (Step-by-Step)
 
 > Backend dan frontend di-deploy sebagai **dua project Vercel terpisah** dari satu repo GitHub yang sama.
@@ -99,29 +115,23 @@ Pastikan semua file terupload termasuk `dataset_katalog.csv`, `dataset_vektor.cs
 
 1. Buka [vercel.com](https://vercel.com/) → Login dengan akun GitHub
 2. Klik **Add New Project**
-3. Pilih repo `smartphone-ai-advisor` dari daftar → Klik **Import**
+3. Pilih repo dari daftar → Klik **Import**
 4. Pada halaman  **Configure Project** , isi:
 
    | Field                      | Nilai                                                           |
    | -------------------------- | --------------------------------------------------------------- |
-   | **Project Name**     | `smartphone-ai-backend`(bebas)                                |
+   | **Project Name**     | bebas (contoh:`smart-phn`)                                    |
    | **Framework Preset** | `Other`                                                       |
    | **Root Directory**   | Klik**Edit**→ ketik `backend`→ klik**Continue** |
    | **Build Command**    | *(kosongkan)*                                                 |
    | **Output Directory** | *(kosongkan)*                                                 |
    | **Install Command**  | *(kosongkan)*                                                 |
 5. Klik **Deploy** — tunggu sampai muncul tanda ✅ **Congratulations!**
-6. Klik **Continue to Dashboard** → copy **Domain** yang tampil, contoh:
-
-   ```
-   https://smartphone-ai-backend.vercel.app
-   ```
-
-   **Simpan URL ini, dibutuhkan di Langkah 3.**
+6. Klik **Continue to Dashboard** → copy **Domain** yang tampil.
 7. Verifikasi backend berjalan — buka di browser:
 
    ```
-   https://smartphone-ai-backend.vercel.app/api/ping
+   https://NAMA-PROJECT.vercel.app/api/ping
    ```
 
    Harus menampilkan:
@@ -129,6 +139,8 @@ Pastikan semua file terupload termasuk `dataset_katalog.csv`, `dataset_vektor.cs
    ```json
    {"status": "ok", "total_hp": 395}
    ```
+
+> ⚠️ **Penting:** Pastikan folder `backend/api/index.py` ada di repo sebelum deploy. File ini adalah entry point yang wajib ada agar Vercel mendeteksi Python function.
 
 ---
 
