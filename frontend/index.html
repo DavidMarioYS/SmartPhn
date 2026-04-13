@@ -813,6 +813,17 @@ input[type=range]::-webkit-slider-thumb {
   </div>
 
   <hr class="sidebar-divider">
+  <!-- Jumlah hasil rekomendasi -->
+  <div class="slider-group">
+    <span class="slider-label">Jumlah Hasil</span>
+    <span class="slider-val" id="topn-display">5</span>
+    <div class="select-slider" id="topn-select">
+      <button class="sel-btn" data-val="3"  onclick="selectSlider('topn',3)">3</button>
+      <button class="sel-btn active" data-val="5"  onclick="selectSlider('topn',5)">5</button>
+      <button class="sel-btn" data-val="10" onclick="selectSlider('topn',10)">10</button>
+    </div>
+  </div>
+  <hr class="sidebar-divider">
   <button class="st-button" id="btn-cari" onclick="cariRekomendasi()">
     🚀 Eksekusi Pencarian
   </button>
@@ -921,7 +932,7 @@ input[type=range]::-webkit-slider-thumb {
 const API = 'https://smart-phn.vercel.app'; // ← Ganti ini dengan URL backend Vercel Anda
 
 // ---- State ----
-let state = { budget: 5000000, ram: 8, rom: 128 };
+let state = { budget: 5000000, ram: 8, rom: 128, topn: 5 };
 let katalogData = { nama_list: [], detail: {} };
 
 // ==========================================
@@ -1043,10 +1054,11 @@ async function cariRekomendasi(brand = '') {
     budget:       state.budget,
     ram:          state.ram,
     memori:       state.rom,
-    baterai:      5000,        // default baterai
+    baterai:      5000,
     brand:        brandArg.toUpperCase(),
     chipset_skor: 2,
     umur_hp:      0,
+    top_n:        state.topn,
   };
 
   try {
@@ -1056,7 +1068,7 @@ async function cariRekomendasi(brand = '') {
     const data = await res.json();
 
     if (data.status === 'sukses') {
-      alertOk.innerHTML = `🎯 Membidik: <b>Rp ${state.budget.toLocaleString('id-ID')} | RAM ${state.ram}GB | ROM ${state.rom}GB</b> &nbsp;|&nbsp; Ditemukan <b>${data.total}</b> HP di bawah budget. Menampilkan 3 terbaik.`;
+      alertOk.innerHTML = `🎯 Membidik: <b>Rp ${state.budget.toLocaleString('id-ID')} | RAM ${state.ram}GB | ROM ${state.rom}GB</b> &nbsp;|&nbsp; Ditemukan <b>${data.total}</b> HP di bawah budget. Menampilkan <b>${data.data.length}</b> terbaik.`;
       alertOk.style.display = 'block';
       renderRekomendasi(data);
     } else {
@@ -1107,12 +1119,14 @@ function renderRekomendasi(data) {
     </div>`;
   });
 
-  // Radar chart section
-  html += `
-  <div class="section-header">📡 Radar Perbandingan</div>
-  <div class="radar-wrap">
-    <div id="radarChart" style="width:100%;height:400px;"></div>
-  </div>`;
+  // Radar chart — hanya tampil jika hasil ≤ 5 (lebih dari itu tidak terbaca)
+  if (data.data.length <= 5) {
+    html += `
+    <div class="section-header">📡 Radar Perbandingan</div>
+    <div class="radar-wrap">
+      <div id="radarChart" style="width:100%;height:400px;"></div>
+    </div>`;
+  }
 
   // Kesimpulan
   const k = data.kesimpulan;
@@ -1125,23 +1139,25 @@ function renderRekomendasi(data) {
 
   document.getElementById('hasil-rekomen').innerHTML = html;
 
-  // Render radar
-  const radarTraces = data.radar.map(s => ({
-    type: 'scatterpolar', r: s.r, theta: s.theta, fill: 'toself', name: s.name,
-    line: { width: 2 }, opacity: 0.8
-  }));
-  Plotly.newPlot('radarChart', radarTraces, {
-    paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
-    polar: {
-      bgcolor: 'transparent',
-      radialaxis: { visible: true, range: [0,1], color: '#8d99ae', gridcolor: 'rgba(255,255,255,0.1)' },
-      angularaxis: { color: '#8d99ae', gridcolor: 'rgba(255,255,255,0.08)' }
-    },
-    showlegend: true,
-    legend: { font: { color: '#e6edf3', size: 12 } },
-    margin: { t:30, b:30, l:60, r:60 },
-    font: { color: '#e6edf3' }
-  }, { responsive: true });
+  // Render radar — hanya jika elemen ada (top_n ≤ 5)
+  if (document.getElementById('radarChart')) {
+    const radarTraces = data.radar.map(s => ({
+      type: 'scatterpolar', r: s.r, theta: s.theta, fill: 'toself', name: s.name,
+      line: { width: 2 }, opacity: 0.8
+    }));
+    Plotly.newPlot('radarChart', radarTraces, {
+      paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+      polar: {
+        bgcolor: 'transparent',
+        radialaxis: { visible: true, range: [0,1], color: '#8d99ae', gridcolor: 'rgba(255,255,255,0.1)' },
+        angularaxis: { color: '#8d99ae', gridcolor: 'rgba(255,255,255,0.08)' }
+      },
+      showlegend: true,
+      legend: { font: { color: '#e6edf3', size: 12 } },
+      margin: { t:30, b:30, l:60, r:60 },
+      font: { color: '#e6edf3' }
+    }, { responsive: true });
+  }
 }
 
 function progressBar(label, val, color, bold=false) {
@@ -1389,6 +1405,7 @@ function barRow(label, val, color) {
 // ==========================================
 window.addEventListener('load', () => {
   updateBudget(5000000);
+  selectSlider('topn', 5);
   loadKatalog();
 });
 </script>

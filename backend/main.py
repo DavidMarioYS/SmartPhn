@@ -146,6 +146,7 @@ class SpesifikasiUser(BaseModel):
     brand:        Optional[str] = ""
     chipset_skor: Optional[int] = 2
     umur_hp:      Optional[int] = 0
+    top_n:        Optional[int] = 5  # jumlah hasil rekomendasi, default 5, max 10
 
 class BandingkanRequest(BaseModel):
     nama_list: List[str]
@@ -188,7 +189,10 @@ def dapatkan_rekomendasi(data: SpesifikasiUser):
     user_scaled  = scaler.transform(user_vec)
     skor_sim     = cosine_similarity(user_scaled, vek_f)
     df_f['Skor'] = skor_sim[0]
-    top3         = df_f.sort_values('Skor', ascending=False).head(3)
+
+    # Clamp top_n antara 1–10, default 5
+    n = max(1, min(10, int(data.top_n or 5)))
+    top3         = df_f.sort_values('Skor', ascending=False).head(n)
 
     rekom_list   = []
     radar_series = []
