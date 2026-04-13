@@ -1,6 +1,7 @@
-# Smartphone AI Advisor
 
-Aplikasi rekomendasi dan perbandingan smartphone berbasis FastAPI (backend) + HTML static (frontend).
+# 📱 Smartphone AI Advisor
+
+Aplikasi rekomendasi dan perbandingan smartphone berbasis **FastAPI** (backend) + **HTML static** (frontend), di-deploy terpisah di Vercel.
 
 ---
 
@@ -9,54 +10,14 @@ Aplikasi rekomendasi dan perbandingan smartphone berbasis FastAPI (backend) + HT
 ```
 App_Smartphone/
 ├── backend/
-│   ├── main.py
-│   ├── requirements.txt
-│   ├── dataset_katalog.csv
-│   ├── dataset_vektor.csv
-│   └── scaler_knn.pkl
+│   ├── main.py                ← FastAPI app (API engine)
+│   ├── requirements.txt       ← Library Python
+│   ├── vercel.json            ← Konfigurasi Vercel untuk Python
+│   ├── dataset_katalog.csv    ← Data HP
+│   ├── dataset_vektor.csv     ← Data fitur ML
+│   └── scaler_knn.pkl         ← Model scaler (MinMaxScaler)
 └── frontend/
-    └── index.html
-```
-
----
-
-## Deploy ke Vessel
-
-### 1. Backend (Python / FastAPI)
-
-1. Buat **New Service** → pilih **Python**
-2. Set **Root Directory** ke `backend/`
-3. **Build Command** : `pip install -r requirements.txt`
-4. **Start Command** : `uvicorn main:app --host 0.0.0.0 --port 8000`
-5. Setelah deploy, copy **Public URL** backend (contoh: `https://smartphone-api.vessel.app`)
-
-### 2. Frontend (Static Site)
-
-1. Buat **New Service** → pilih **Static Site**
-2. Set **Root Directory** ke `frontend/`
-3. Tambahkan  **Environment Variable** :
-   * Key: `BACKEND_URL`
-   * Value: URL backend dari langkah 1 (contoh: `https://smartphone-api.vessel.app`)
-4. Sebelum deploy, edit `index.html` baris pertama JavaScript:
-   ```js
-   const API = 'https://smartphone-api.vessel.app';  // ganti dengan URL backend Anda
-   ```
-
----
-
-## Jalankan Lokal
-
-```bash
-# Backend
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload
-
-# Frontend
-# Buka frontend/index.html langsung di browser, atau:
-cd frontend
-python -m http.server 3000
-# Akses: http://localhost:3000
+    └── index.html             ← UI aplikasi (static)
 ```
 
 ---
@@ -99,7 +60,158 @@ Waktu Pengujian        : 0.58 detik
 
 ---
 
+## Deploy ke Vercel (Step-by-Step)
+
+> Backend dan frontend di-deploy sebagai **dua project Vercel terpisah** dari satu repo GitHub yang sama.
+
+---
+
+### LANGKAH 1 — Push ke GitHub
+
+Buka terminal di folder `App_Smartphone`, jalankan satu per satu:
+
+```bash
+git init
+git add .
+git commit -m "init: Smartphone AI Advisor"
+```
+
+Buka [github.com/new](https://github.com/new), buat repo baru:
+
+* Nama bebas, contoh: `smartphone-ai-advisor`
+* Visibility: Public atau Private
+* **Jangan** centang "Add a README file"
+* Klik **Create repository**
+
+Kembali ke terminal:
+
+```bash
+git remote add origin https://github.com/USERNAME/smartphone-ai-advisor.git
+git branch -M main
+git push -u origin main
+```
+
+Pastikan semua file terupload termasuk `dataset_katalog.csv`, `dataset_vektor.csv`, dan `scaler_knn.pkl`.
+
+---
+
+### LANGKAH 2 — Deploy Backend di Vercel
+
+1. Buka [vercel.com](https://vercel.com/) → Login dengan akun GitHub
+2. Klik **Add New Project**
+3. Pilih repo `smartphone-ai-advisor` dari daftar → Klik **Import**
+4. Pada halaman  **Configure Project** , isi:
+
+   | Field                      | Nilai                                                           |
+   | -------------------------- | --------------------------------------------------------------- |
+   | **Project Name**     | `smartphone-ai-backend`(bebas)                                |
+   | **Framework Preset** | `Other`                                                       |
+   | **Root Directory**   | Klik**Edit**→ ketik `backend`→ klik**Continue** |
+   | **Build Command**    | *(kosongkan)*                                                 |
+   | **Output Directory** | *(kosongkan)*                                                 |
+   | **Install Command**  | *(kosongkan)*                                                 |
+5. Klik **Deploy** — tunggu sampai muncul tanda ✅ **Congratulations!**
+6. Klik **Continue to Dashboard** → copy **Domain** yang tampil, contoh:
+
+   ```
+   https://smartphone-ai-backend.vercel.app
+   ```
+
+   **Simpan URL ini, dibutuhkan di Langkah 3.**
+7. Verifikasi backend berjalan — buka di browser:
+
+   ```
+   https://smartphone-ai-backend.vercel.app/api/ping
+   ```
+
+   Harus menampilkan:
+
+   ```json
+   {"status": "ok", "total_hp": 395}
+   ```
+
+---
+
+### LANGKAH 3 — Update URL Backend di Frontend
+
+Buka file `frontend/index.html`, cari baris berikut (sekitar baris 746):
+
+```js
+const API = 'GANTI_DENGAN_URL_BACKEND_VERCEL'; // ← Ganti ini dengan URL backend Vercel Anda
+```
+
+Ganti dengan URL dari Langkah 2:
+
+```js
+const API = 'https://smartphone-ai-backend.vercel.app';
+```
+
+Simpan file, lalu push ke GitHub:
+
+```bash
+git add frontend/index.html
+git commit -m "fix: set backend URL to Vercel"
+git push
+```
+
+---
+
+### LANGKAH 4 — Deploy Frontend di Vercel
+
+1. Kembali ke [vercel.com/new](https://vercel.com/new)
+2. Klik **Add New Project** → Import repo yang **sama** (`smartphone-ai-advisor`)
+3. Pada halaman  **Configure Project** , isi:| Field                      | Nilai                                                            |
+   | -------------------------- | ---------------------------------------------------------------- |
+   | **Project Name**     | `smartphone-ai-frontend`(bebas)                                |
+   | **Framework Preset** | `Other`                                                        |
+   | **Root Directory**   | Klik**Edit**→ ketik `frontend`→ klik**Continue** |
+   | **Build Command**    | *(kosongkan)*                                                  |
+   | **Output Directory** | *(kosongkan)*                                                  |
+4. Klik **Deploy** → tunggu ✅
+5. URL frontend siap diakses dan dibagikan, contoh:
+   ```
+   https://smartphone-ai-frontend.vercel.app
+   ```
+
+---
+
+### LANGKAH 5 — Verifikasi Akhir
+
+Buka URL frontend di browser. Lakukan tes berikut:
+
+* [ ] Slider budget, RAM, ROM bisa digerakkan
+* [ ] Ketik query di chat input, tekan Enter → hasil muncul
+* [ ] Klik **Eksekusi Pencarian** → 3 kartu HP muncul dengan radar chart
+* [ ] Buka tab **Perbandingan HP** → pilih 2 HP → klik **Mulai Perbandingan**
+* [ ] Semua skor, tabel, dan kesimpulan muncul dengan benar
+
+---
+
+## Jalankan Lokal (Development)
+
+```bash
+# Backend
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload
+# Akses API: http://127.0.0.1:8000
+
+# Frontend (terminal baru)
+cd frontend
+python -m http.server 3000
+# Akses UI: http://localhost:3000
+```
+
+Saat lokal, pastikan baris di `index.html` adalah:
+
+```js
+const API = 'http://127.0.0.1:8000';
+```
+
+---
+
 ## Catatan Penting
 
-* `dataset_katalog.csv`, `dataset_vektor.csv`, dan `scaler_knn.pkl` **wajib ada** di folder `backend/` — tidak boleh dihapus.
-* Backend menggunakan CORS `allow_origins=["*"]` — aman untuk development. Untuk production, ganti dengan domain frontend spesifik.
+* `dataset_katalog.csv`, `dataset_vektor.csv`, dan `scaler_knn.pkl` **wajib ada** di folder `backend/` dan ikut di-push ke GitHub — ketiga file ini dibaca langsung saat startup API.
+* Backend di Vercel berjalan sebagai **serverless function** — request pertama setelah idle (cold start) bisa lebih lambat 2–3 detik. Request berikutnya normal.
+* Backend menggunakan CORS `allow_origins=["*"]` — cukup untuk production skala kecil. Untuk keamanan lebih ketat, ganti `"*"` dengan domain frontend spesifik di `main.py`.
